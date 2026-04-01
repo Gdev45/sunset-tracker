@@ -20,18 +20,18 @@ def get_coordinates(city):
     try:
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code != 200:
-            print(Fore.RED + f"❌ Error fetching location (HTTP {response.status_code})")
+            print(Fore.RED + f"❌ Oops! Couldn't fetch location (HTTP {response.status_code})")
             return None, None
 
         data = response.json()
         if not data:
-            print(Fore.RED + "❌ City not found.")
+            print(Fore.RED + f"❌ Hmm… I couldn’t find a city named '{city}'.")
             return None, None
 
         return data[0]["lat"], data[0]["lon"]
 
     except requests.exceptions.RequestException as e:
-        print(Fore.RED + f"❌ Network error: {e}")
+        print(Fore.RED + f"❌ Network problem: {e}")
         return None, None
 
 
@@ -41,21 +41,21 @@ def get_sun_times(lat, lon):
     try:
         response = requests.get(url, timeout=5)
         if response.status_code != 200:
-            print(Fore.RED + f"❌ Error fetching sun data (HTTP {response.status_code})")
+            print(Fore.RED + f"❌ Could not fetch sun data (HTTP {response.status_code})")
             return None, None, None
 
         data = response.json()["results"]
 
-        # Determine timezone based on coordinates
+        # Get timezone from coordinates
         tf = TimezoneFinder()
         tz_name = tf.timezone_at(lat=float(lat), lng=float(lon))
         if not tz_name:
-            print(Fore.RED + "❌ Could not determine timezone for location.")
+            print(Fore.RED + "❌ Sorry, I couldn't figure out your timezone.")
             return None, None, None
 
         tz = ZoneInfo(tz_name)
 
-        # Parse UTC times and convert to location timezone
+        # Convert UTC times to local timezone
         sunrise_utc = datetime.fromisoformat(data["sunrise"]).replace(tzinfo=timezone.utc)
         sunset_utc = datetime.fromisoformat(data["sunset"]).replace(tzinfo=timezone.utc)
 
@@ -65,10 +65,10 @@ def get_sun_times(lat, lon):
         return sunrise_local, sunset_local, tz_name
 
     except requests.exceptions.RequestException as e:
-        print(Fore.RED + f"❌ Network error: {e}")
+        print(Fore.RED + f"❌ Network problem: {e}")
         return None, None, None
     except Exception as e:
-        print(Fore.RED + f"❌ Error parsing sun data: {e}")
+        print(Fore.RED + f"❌ Something went wrong while parsing sun data: {e}")
         return None, None, None
 
 
@@ -90,26 +90,26 @@ def format_time(t):
 def main():
     banner()
 
-    print(Fore.RED + "\nHow would you like to enter your location?")
+    print(Fore.RED + "\nHow would you like to provide your location?")
     print("1) City name")
-    print("2) Coordinates")
+    print("2) Latitude & Longitude")
 
-    choice = input(Fore.RED + "\nEnter choice (1/2): ").strip()
+    choice = input(Fore.RED + "\nYour choice (1 or 2): ").strip()
 
     if choice == "1":
-        city = input(Fore.RED + "Enter city name: ")
+        city = input(Fore.RED + "Enter your city name: ").strip()
         lat, lon = get_coordinates(city)
         if not lat:
             return
     elif choice == "2":
-        print(Fore.RED + "\nEnter your coordinates:")
-        lat = input("Latitude  : ")
-        lon = input("Longitude : ")
+        print(Fore.RED + "\nPlease enter your coordinates:")
+        lat = input("Latitude  : ").strip()
+        lon = input("Longitude : ").strip()
     else:
-        print(Fore.RED + "❌ Invalid choice.")
+        print(Fore.RED + "❌ Invalid option. Please restart the program.")
         return
 
-    print(Fore.MAGENTA + "\nFetching sun data...\n")
+    print(Fore.MAGENTA + "\nFetching sun data… please wait...\n")
 
     sunrise, sunset, tz_name = get_sun_times(lat, lon)
     if not sunrise or not sunset:
@@ -124,16 +124,16 @@ def main():
     print(f"{Fore.GREEN}Sunrise:{Style.RESET_ALL} {format_time(sunrise)}")
     print(f"{Fore.RED}Sunset :{Style.RESET_ALL} {format_time(sunset)}")
 
-    print(Fore.YELLOW + "\n GOLDEN HOUR")
+    print(Fore.YELLOW + "\n✨ GOLDEN HOUR")
     print(f"Morning: {format_time(hours['morning_golden'][0])} - {format_time(hours['morning_golden'][1])}")
     print(f"Evening: {format_time(hours['evening_golden'][0])} - {format_time(hours['evening_golden'][1])}")
 
-    print(Fore.CYAN + "\n BLUE HOUR")
+    print(Fore.CYAN + "\n💙 BLUE HOUR")
     print(f"Morning: {format_time(hours['morning_blue'][0])} - {format_time(hours['morning_blue'][1])}")
     print(f"Evening: {format_time(hours['evening_blue'][0])} - {format_time(hours['evening_blue'][1])}")
 
     print(Fore.RED + "\n" + "=" * 50)
-    print(Fore.YELLOW + "✅ Done!")
+    print(Fore.YELLOW + "✅ All done! Enjoy your perfect light!")
 
 
 if __name__ == "__main__":
